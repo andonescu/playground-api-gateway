@@ -1,10 +1,10 @@
 package ro.andonescu.playground.apigateway.controllers
 
+import io.vavr.control.Option
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -28,6 +28,8 @@ class IpsControllerTest(@Autowired val mockMvc: MockMvc) {
 
     private val pageNoOne = 1
     private val defaultPageSize = 10
+
+    private val lookupIPAddress = "192.168.2.1"
 
     @Test
     @DisplayName("IpsControllerTest#findAll should return all IPS from a specific page")
@@ -77,5 +79,45 @@ class IpsControllerTest(@Autowired val mockMvc: MockMvc) {
                 .andExpect(jsonPath("$.pageInfo.size").value(10))
                 .andExpect(jsonPath("$.data", hasSize<Any>(0)))
 
+    }
+
+    @Test
+    @DisplayName("IpsControllerTest#find should return the IP object if is stored in database")
+    fun find_shouldReturnIpIfDiscovered() {
+
+        //given
+        Mockito.`when`(databaseStorage?.find(lookupIPAddress)).thenReturn(Option.of(lookupIPAddress))
+
+        // when
+        val mvcResult: MvcResult = mockMvc.perform(get("/api/ips/$lookupIPAddress"))
+                .andExpect(request().asyncStarted())
+                .andReturn()
+
+        // then
+        val result: ResultActions = this.mockMvc.perform(asyncDispatch(mvcResult))
+
+        result
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/json"))
+                .andExpect(jsonPath("$.ip").value(lookupIPAddress))
+
+    }
+
+    @Test
+    @DisplayName("IpsControllerTest#find should return not found if the ip address is not stored")
+    fun find_shouldReturnNotFoundIfIpIsNotStored() {
+        //given
+        Mockito.`when`(databaseStorage?.find(lookupIPAddress)).thenReturn(Option.none())
+
+        // when
+        val mvcResult: MvcResult = mockMvc.perform(get("/api/ips/$lookupIPAddress"))
+                .andExpect(request().asyncStarted())
+                .andReturn()
+
+        // then
+        val result: ResultActions = this.mockMvc.perform(asyncDispatch(mvcResult))
+
+        result
+                .andExpect(status().isNotFound)
     }
 }
