@@ -1,6 +1,7 @@
 package ro.andonescu.playground.apigateway.controllers
 
 import io.vavr.control.Option
+import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -9,6 +10,7 @@ import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.MvcResult
@@ -156,5 +158,101 @@ class IpsControllerTest(@Autowired val mockMvc: MockMvc) {
 
         result
                 .andExpect(status().isNotFound)
+    }
+
+    @Test
+    @DisplayName("IpsControllerTest#add should return BadRequest if the ip provided is not valid")
+    fun add_shouldReturnBadRequestIfInvalid() {
+        //given
+        val invalidIpData = "{\"ip\":\"192.178.2A.3\"}"
+
+        // when
+        val mvcResult: MvcResult = mockMvc.perform(post("/api/ips").contentType(APPLICATION_JSON).content(invalidIpData))
+                .andExpect(request().asyncStarted())
+                .andReturn()
+
+
+        // then
+        val result: ResultActions = this.mockMvc.perform(asyncDispatch(mvcResult))
+
+        result
+                .andExpect(status().isBadRequest)
+                .andExpect(content().contentType("application/json"))
+                .andExpect(jsonPath("$.errors", hasSize<Any>(1)))
+                .andExpect(jsonPath("$.errors[0].field").value("ip"))
+                .andExpect(jsonPath("$.errors[0].message").value("Invalid Ip Address"))
+    }
+
+    @Test
+    @DisplayName("IpsControllerTest#add should return BadRequest if ip is not provided")
+    fun add_shouldReturnBadRequestIfNotProvided() {
+        //given
+        val invalidIpData = "{\"ip\":\"\"}"
+
+        // when
+        val mvcResult: MvcResult = mockMvc.perform(post("/api/ips").contentType(APPLICATION_JSON).content(invalidIpData))
+                .andExpect(request().asyncStarted())
+                .andReturn()
+
+
+        // then
+        val result: ResultActions = this.mockMvc.perform(asyncDispatch(mvcResult))
+
+        result
+                .andExpect(status().isBadRequest)
+                .andExpect(content().contentType("application/json"))
+                .andExpect(jsonPath("$.errors", hasSize<Any>(1)))
+                .andExpect(jsonPath("$.errors[0].field").value("ip"))
+                .andExpect(jsonPath("$.errors[0].message").value("Ip Address is not provided"))
+    }
+
+    @Test
+    @DisplayName("IpsControllerTest#add should return BadRequest if ip is already stored")
+    fun add_shouldReturnBadRequestIfIpIsStored() {
+        //given
+        val ipAddress = "192.178.2.3"
+        val validJson = "{\"ip\":\"$ipAddress\"}"
+
+        Mockito.`when`(databaseStorage?.find(lookupIPAddress)).thenReturn(Option.of(ipAddress))
+
+        // when
+        val mvcResult: MvcResult = mockMvc.perform(post("/api/ips").contentType(APPLICATION_JSON).content(validJson))
+                .andExpect(request().asyncStarted())
+                .andReturn()
+
+
+        // then
+        val result: ResultActions = this.mockMvc.perform(asyncDispatch(mvcResult))
+
+        result
+                .andExpect(status().isBadRequest)
+                .andExpect(content().contentType("application/json"))
+                .andExpect(jsonPath("$.errors", hasSize<Any>(1)))
+                .andExpect(jsonPath("$.errors[0].field").value("ip"))
+                .andExpect(jsonPath("$.errors[0].message").value("Ip Address already exists"))
+    }
+
+    @Test
+    @DisplayName("IpsControllerTest#add should return Created if ip is stored in db")
+    fun add_shouldReturnCreatedIfIpExists() {
+        //given
+        val ipAddress = "192.178.2.3"
+        val validJson = "{\"ip\":\"$ipAddress\"}"
+
+        Mockito.`when`(databaseStorage?.find(lookupIPAddress)).thenReturn(Option.none())
+        Mockito.`when`(databaseStorage?.add(lookupIPAddress)).thenReturn(Option.of(Unit))
+
+        // when
+        val mvcResult: MvcResult = mockMvc.perform(post("/api/ips").contentType(APPLICATION_JSON).content(validJson))
+                .andExpect(request().asyncStarted())
+                .andReturn()
+
+
+        // then
+        val result: ResultActions = this.mockMvc.perform(asyncDispatch(mvcResult))
+
+        result
+                .andExpect(status().isCreated)
+                .andExpect(header().string("Location", containsString("api/ips/$ipAddress")))
     }
 }

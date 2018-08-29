@@ -29,6 +29,11 @@ class IpsController(val databaseStorage: DatabaseStorage) {
         )
     }
 
+    @PostMapping
+    fun add(@RequestBody ip: Ip): Mono<ResponseEntity<*>> {
+        TODO()
+    }
+
     @GetMapping("{ip}")
     fun find(@PathVariable ip: String): Mono<ResponseEntity<*>> {
 
