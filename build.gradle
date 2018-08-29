@@ -48,6 +48,10 @@ dependencies {
 	compile("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	compile("org.jetbrains.kotlin:kotlin-reflect")
 
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8'
+
+    compile group: 'com.google.guava', name: 'guava', version: '26.0-jre'
+
     compile group: 'io.vavr', name: 'vavr', version: '0.9.2'
 
 	testCompile('org.springframework.boot:spring-boot-starter-test')

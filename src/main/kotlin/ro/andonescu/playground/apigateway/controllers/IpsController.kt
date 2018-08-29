@@ -2,16 +2,23 @@ package ro.andonescu.playground.apigateway.controllers
 
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.http.ResponseEntity
+import org.springframework.validation.BindingResult
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 import ro.andonescu.playground.apigateway.controllers.webforms.Ip
 import ro.andonescu.playground.apigateway.controllers.webforms.Page
 import ro.andonescu.playground.apigateway.controllers.webforms.PageInfo
+import ro.andonescu.playground.apigateway.controllers.webforms.errors.ErrorField
+import ro.andonescu.playground.apigateway.controllers.webforms.errors.ErrorMessage
 import ro.andonescu.playground.apigateway.services.DatabaseStorage
+import java.util.stream.Collectors
+import javax.validation.Valid
+
 
 @RestController
 @RequestMapping("api/ips")
 class IpsController(val databaseStorage: DatabaseStorage) {
+
 
     @GetMapping()
     fun findAll(
@@ -30,8 +37,18 @@ class IpsController(val databaseStorage: DatabaseStorage) {
     }
 
     @PostMapping
-    fun add(@RequestBody ip: Ip): Mono<ResponseEntity<*>> {
-        TODO()
+    fun add(@Valid @RequestBody ip: Ip, bindingResult: BindingResult): Mono<ResponseEntity<*>> {
+        if (bindingResult.hasErrors()) {
+            val errors = bindingResult.fieldErrors.stream().map { err -> ErrorField(err.field, err.toString()) }.collect(Collectors.toList())
+
+            return Mono.just(
+                    ResponseEntity.badRequest()
+                            .contentType(APPLICATION_JSON)
+                            .body(ErrorMessage(errors))
+            )
+        } else {
+            TODO()
+        }
     }
 
     @GetMapping("{ip}")
