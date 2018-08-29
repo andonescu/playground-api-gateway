@@ -13,8 +13,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.MvcResult
 import org.springframework.test.web.servlet.ResultActions
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import ro.andonescu.playground.apigateway.services.DatabaseStorage
 
@@ -111,6 +110,44 @@ class IpsControllerTest(@Autowired val mockMvc: MockMvc) {
 
         // when
         val mvcResult: MvcResult = mockMvc.perform(get("/api/ips/$lookupIPAddress"))
+                .andExpect(request().asyncStarted())
+                .andReturn()
+
+        // then
+        val result: ResultActions = this.mockMvc.perform(asyncDispatch(mvcResult))
+
+        result
+                .andExpect(status().isNotFound)
+    }
+
+
+    @Test
+    @DisplayName("IpsControllerTest#delete should return OK if the IP is removed from the database")
+    fun delete_shouldReturnIpIfDiscovered() {
+
+        //given
+        Mockito.`when`(databaseStorage?.remove(lookupIPAddress)).thenReturn(true)
+
+        // when
+        val mvcResult: MvcResult = mockMvc.perform(delete("/api/ips/$lookupIPAddress"))
+                .andExpect(request().asyncStarted())
+                .andReturn()
+
+        // then
+        val result: ResultActions = this.mockMvc.perform(asyncDispatch(mvcResult))
+
+        result
+                .andExpect(status().isOk())
+    }
+
+    @Test
+    @DisplayName("IpsControllerTest#delete should return not found if the ip address is not stored")
+    fun delete_shouldReturnNotFoundIfIpIsNotStored() {
+        //given
+        Mockito.`when`(databaseStorage?.remove(lookupIPAddress)).thenReturn(false)
+
+        // when
+        val mvcResult: MvcResult = mockMvc.perform(delete("/api/ips/$lookupIPAddress"))
                 .andExpect(request().asyncStarted())
                 .andReturn()
 

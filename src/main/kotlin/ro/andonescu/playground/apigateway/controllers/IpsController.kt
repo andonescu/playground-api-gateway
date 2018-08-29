@@ -41,4 +41,15 @@ class IpsController(val databaseStorage: DatabaseStorage) {
                         .getOrElse(ResponseEntity.notFound().build())
         )
     }
+
+    @DeleteMapping("{ip}")
+    fun delete(@PathVariable ip: String): Mono<ResponseEntity<*>> {
+
+        val response = if (databaseStorage.remove(ip))
+            ResponseEntity.ok("")
+        else
+            ResponseEntity.notFound().build()
+
+        return Mono.just(response)
+    }
 }
