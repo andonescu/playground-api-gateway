@@ -47,6 +47,6 @@ class DatabaseStorageImpl : DatabaseStorage {
     }
 
     override fun remove(ip: String?): Boolean {
-        TODO("not implemented")
+        return database.remove(ip)
     }
 }

@@ -61,4 +61,22 @@ class DatabaseStorageImplTest {
 
         assertThat(elements.joinToString(";"), equalToIgnoringCase("${storedIps.last()}"))
     }
+
+    @Test
+    @DisplayName("DatabaseStorageImpl#delete should remove the given element")
+    fun delete_existingElement() {
+        val removeOp = databaseStorage!!.remove(storedIps.first())
+
+        assertEquals(true, removeOp)
+        assertThat(databaseStorage!!.findAll(1, 1).second, equalTo(storedIps.size - 1))
+    }
+
+    @Test
+    @DisplayName("DatabaseStorageImpl#delete should not remove anything if the given element is not stored")
+    fun delete_nonExistingElement() {
+        val removeOp = databaseStorage!!.remove("1.2.3.123")
+
+        assertEquals(false, removeOp)
+        assertThat(databaseStorage!!.findAll(1, 1).second, equalTo(storedIps.size))
+    }
 }
