@@ -4,7 +4,7 @@ import io.vavr.control.Option
 
 interface DatabaseStorage {
 
-    fun findAll(size: Int?, page: Int?): Pair<List<String>, Int>
+    fun findAll(size: Int, page: Int): Pair<List<String>, Int>
 
     fun find(ip: String?): Option<String>
 

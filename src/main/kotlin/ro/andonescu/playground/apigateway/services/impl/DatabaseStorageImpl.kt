@@ -13,8 +13,23 @@ class DatabaseStorageImpl : DatabaseStorage {
 
     private val database: MutableSet<String> = ConcurrentHashMap.newKeySet<String>()
 
-    override fun findAll(size: Int?, page: Int?): Pair<List<String>, Int> {
-        TODO("not implemented")
+    override fun findAll(size: Int, page: Int): Pair<List<String>, Int> {
+        val totalSize = database.size
+
+        val startPos = (page - 1) * size
+
+        // in case we request a page which does not exist
+        if (startPos >= totalSize || startPos < 0) {
+            return Pair(listOf(), totalSize)
+        }
+
+
+        val endPos = if (startPos + page > totalSize - 1)
+            startPos + page - ((startPos + page) - totalSize) - 1
+        else
+            startPos + page
+
+        return Pair(database.toList().subList(startPos, endPos + 1), totalSize)
     }
 
     override fun find(ip: String?): Option<String> {
